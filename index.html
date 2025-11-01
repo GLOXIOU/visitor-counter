@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <button class="btn-main" onclick="window.location.href='/'">Page principale</button>
+    <button class="btn-theme" id="theme-btn">
+      <img id="theme-icon" src="https://cdn-icons-png.flaticon.com/512/6714/6714978.png" alt="theme icon">
+    </button>
+  </header>
+
+  <main>
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-title">Pages trackées</div>
+        <div class="stat-value" id="pages-count">42</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Visiteurs aujourd'hui</div>
+        <div class="stat-value" id="today-visitors">128</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Visiteurs totaux</div>
+        <div class="stat-value" id="total-visitors">9583</div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
