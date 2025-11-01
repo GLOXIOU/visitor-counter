@@ -3,39 +3,61 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Visiter Counter — Balises</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Visiter Counter — Création de balise</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <div class="header-left">
-      <button class="btn-main" onclick="window.location.href='/'">Page principale</button>
-    </div>
-    <div class="header-right">
-      <button class="btn-theme" id="theme-btn">
-        <img id="theme-icon" src="https://cdn-icons-png.flaticon.com/512/6714/6714978.png" alt="theme icon">
-      </button>
+  <header class="site-header">
+    <div class="container">
+      <h1>Visiter Counter</h1>
+      <p class="muted">Créez une balise pour suivre les visites</p>
+      <button id="openModal" class="btn-primary">Créer une nouvelle balise</button>
     </div>
   </header>
 
-  <main>
-    <section class="panel">
-      <div class="panel-head">
-        <h1>Mes balises</h1>
-        <div class="controls">
-          <button id="newTagBtn" class="btn primary">+ Nouvelle balise</button>
-          <a class="btn" href="dashboard.html">Aller au dashboard</a>
-        </div>
+  <main class="container">
+    <section class="card">
+      <h2>Vos balises</h2>
+      <p class="muted">Voici la liste de vos balises créées :</p>
+      <div id="tagsList" class="tags-list">
+        <div class="empty">Aucune balise créée.</div>
       </div>
-
-      <p class="hint">Cliquez sur une balise pour ouvrir le dashboard associé.</p>
-
-      <ul id="tagList" class="tag-list" aria-live="polite"></ul>
-
-      <div id="emptyState" class="empty">Aucune balise pour le moment — créez-en une !</div>
     </section>
   </main>
 
-  <script src="script.js" defer></script>
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" id="backdrop"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" id="closeModal" aria-label="Fermer">&times;</button>
+      <h3 id="modalTitle">Créer une nouvelle balise</h3>
+
+      <form id="createForm" class="form">
+        <label for="tagName">Nom de la balise</label>
+        <input id="tagName" name="tagName" type="text" placeholder="Ex: blog-home" maxlength="50" required />
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Générer la balise</button>
+          <button type="button" id="cancel" class="btn-ghost">Annuler</button>
+        </div>
+      </form>
+
+      <div id="result" class="result" hidden>
+        <h4>Résultat</h4>
+
+        <label>Identifiant (code de 10 caractères)</label>
+        <div class="code-row">
+          <pre id="codeId" class="code">—</pre>
+          <button class="btn-copy" data-copytarget="#codeId" title="Copier">Copier</button>
+        </div>
+
+        <label>Code à mettre dans le &lt;head&gt; de votre site</label>
+        <div class="code-row">
+          <pre id="codeHead" class="code"><!-- --></pre>
+          <button class="btn-copy" data-copytarget="#codeHead" title="Copier">Copier</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
