@@ -85,7 +85,7 @@ function createTagElement(item) {
   viewBtn.className = 'btn ghost small';
   viewBtn.textContent = 'Voir le dashboard';
   viewBtn.addEventListener('click', () => {
-    location.href = `dashboard.html?tag=${encodeURIComponent(item.code)}`;
+    location.href = `../dashboard/dashboard.html?tag=${encodeURIComponent(item.code)}`;
   });
 
   actions.appendChild(copyBtn);
