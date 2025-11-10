@@ -39,22 +39,29 @@ body{
 .brand{
   display:flex;
   align-items:center;
-  gap:12px;
-  font-weight:700;
+  gap:8px;
+  font-weight:800;
   letter-spacing:-0.2px;
-  font-size:30px;
+  font-size:36px;
+  line-height:1;
+  color:var(--text);
+  margin:0;
+  padding:0;
 }
 .brand .logo{
-  width:44px;
-  height:44px;
-  border-radius:10px;
-  background:linear-gradient(135deg,var(--spotify), #22c55e 80%);
-  display:grid;
-  place-items:center;
-  font-weight:800;
-  color:#08220b;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-  font-size:20px;
+  background:transparent;
+  width:auto;
+  height:auto;
+  border-radius:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:none;
+  padding:0;
+  margin:0;
+  font-size:inherit;
+  font-weight:inherit;
+  color:inherit;
 }
 
 .wrap{
@@ -123,6 +130,34 @@ h2{margin:0 0 8px 0}
 }
 .btn.small{padding:6px 10px;font-size:13px}
 
+/* bouton thème simple et propre (ressemble au style "icone ronde" de ta capture) */
+.vc-theme-btn{
+  width:38px;
+  height:38px;
+  padding:6px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:transparent;
+  border:1px solid rgba(0,0,0,0.08);
+  color:inherit;
+  transition:all .12s ease;
+  gap:0;
+}
+.vc-theme-btn img{
+  width:18px;
+  height:18px;
+  display:block;
+  pointer-events:none;
+}
+/* en thème sombre on augmente légèrement la visibilité de la bordure */
+[data-theme="dark"] .vc-theme-btn{
+  border-color: rgba(255,255,255,0.12);
+  background:transparent;
+}
+
+/* conserve comportement modal et champs */
 .modal{
   position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:20px;background:linear-gradient(rgba(2,6,23,0.6),rgba(2,6,23,0.6));
 }
@@ -173,6 +208,6 @@ input[type="text"],input[readonly],textarea,select{
 }
 @media (max-width:560px){
   .tag-name{max-width:120px}
-  .brand{font-size:16px}
+  .brand{font-size:22px}
   .modal-content{padding:14px}
 }
