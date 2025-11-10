@@ -20,30 +20,30 @@
   </header>
 
   <main>
-    <div class="map-container">
-      <div id="map"></div>
-    </div>
-
     <div class="info-row">
       <div class="card info-card">
-        <div class="info-title">Balise</div>
+        <div class="info-title">Nom de la balise</div>
         <div class="info-value" id="tagName">—</div>
       </div>
       <div class="card info-card">
-        <div class="info-title">Paramètre "tag" dans l'URL</div>
+        <div class="info-title">Code du tag</div>
         <div class="info-value" id="tagParam">—</div>
       </div>
     </div>
 
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+
     <div class="stats">
-      <div class="stat-card-no-grow">
+      <div class="stat-card-no-grow card" data-chart="pages">
         <div class="stat-title">Pages trackées</div>
         <div class="stat-value" id="pages-count">42</div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card card" data-chart="visitors">
         <div class="stat-title">
-          Visiteurs aujourd'hui
+          Visiteurs
           <div class="period-wrapper">
             <button id="periodButton" class="period-btn" aria-haspopup="true" aria-controls="periodList" aria-expanded="false">Aujourd'hui ▾</button>
             <ul id="periodList" class="period-list" role="menu" aria-labelledby="periodButton" hidden>
@@ -54,16 +54,45 @@
           </div>
         </div>
         <div class="stat-value" id="today-visitors">128</div>
+        <div class="card-hint">Cliquez pour voir le graphique</div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card card" data-chart="total">
         <div class="stat-title">Visiteurs totaux</div>
         <div class="stat-value" id="total-visitors">9583</div>
+        <div class="card-hint">Cliquez pour voir le graphique</div>
       </div>
     </div>
+
+    <section class="latency-panel card">
+      <div class="latency-header">
+        <h2>Latence API (Ping en ms)</h2>
+        <div class="latency-note">Actualisé toutes les 10 secondes</div>
+      </div>
+      <canvas id="latencyChart"></canvas>
+    </section>
   </main>
 
+  <div id="chartModal" class="chart-modal" hidden>
+    <div class="chart-backdrop" id="chartBackdrop"></div>
+    <div class="chart-container" role="dialog" aria-modal="true" aria-labelledby="chartTitle">
+      <div class="chart-header">
+        <h3 id="chartTitle">Graphique</h3>
+        <div class="chart-controls">
+          <button id="chartPrevPeriod" class="btn" aria-label="Période précédente">‹</button>
+          <button id="chartNextPeriod" class="btn" aria-label="Période suivante">›</button>
+          <button id="chartClose" class="btn" aria-label="Fermer">✕</button>
+        </div>
+      </div>
+      <canvas id="chartCanvas"></canvas>
+      <div class="chart-footer">
+        <span id="chartNote"></span>
+      </div>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
   <script src="dashboard.js" defer></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ html, body {
   font-family: "Inter", sans-serif;
   background: #111;
   color: #f5f6fa;
-  transition: background 0.4s ease, color 0.4s ease;
+  transition: background 0.25s ease, color 0.25s ease;
   overflow-x: hidden;
 }
 body.light-theme {
@@ -25,7 +25,7 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 20px 30px;
-  z-index: 10;
+  z-index: 20;
 }
 .header-left {
   display: flex;
@@ -91,7 +91,7 @@ main {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  margin-bottom: 40px;
+  margin: 20px 0 40px 0;
 }
 #map {
   width: 100%;
@@ -112,7 +112,6 @@ main {
   text-align: center;
   transition: all 0.3s ease;
 }
-
 .stat-card-no-grow {
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
   border: 1px solid rgba(255,255,255,0.07);
@@ -121,7 +120,6 @@ main {
   text-align: center;
   transition: all 0.3s ease;
 }
-
 .stat-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 15px 25px rgba(0,0,0,0.45);
@@ -140,7 +138,17 @@ main {
   font-weight: 700;
   color: #1db954;
 }
+.card-hint {
+  margin-top: 10px;
+  font-size: 13px;
+  color: rgba(230,238,246,0.7);
+}
 body.light-theme .stat-card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+body.light-theme .stat-card-no-grow {
   background: #fff;
   border: 1px solid rgba(0,0,0,0.06);
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
@@ -158,12 +166,6 @@ body.light-theme .stat-value {
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-.panel-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
 }
 .controls {
   display: flex;
@@ -231,9 +233,10 @@ body.light-theme .stat-value {
 .info-row {
   display: flex;
   gap: 12px;
-  margin-bottom: 12px;
+  margin: 12px 0;
   width: 95%;
   max-width: 1200px;
+  justify-content: flex-start;
 }
 .card {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
@@ -282,7 +285,7 @@ body.light-theme .stat-value {
   list-style: none;
   border: 1px solid rgba(255,255,255,0.04);
   box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-  z-index: 20;
+  z-index: 30;
 }
 .period-list[hidden] {
   display: none;
@@ -295,13 +298,88 @@ body.light-theme .stat-value {
   font-size: 13px;
 }
 .period-list li[aria-current="true"], .period-list li:hover, .period-list li:focus {
-  background: linear-gradient(90deg,#1f2427,#15181b);
+  background: linear-gradient(90deg,#2a2e31,#15181b);
   color: #e6eef6;
   outline: none;
+}
+.latency-panel {
+  width: 95%;
+  max-width: 1200px;
+  margin-top: 18px;
+  padding: 20px;
+}
+.latency-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.latency-header h2 { font-size: 18px; margin: 0; }
+.latency-note { font-size: 13px; color: rgba(230,238,246,0.6); }
+
+.chart-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+.chart-modal[hidden] {
+  display: none;
+}
+.chart-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+}
+.chart-container {
+  position: relative;
+  width: min(1100px, calc(100% - 40px));
+  max-height: calc(100% - 80px);
+  overflow: hidden;
+  background: rgba(17,17,17,0.92);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  z-index: 1010;
+}
+body.light-theme .chart-container {
+  background: #fff;
+}
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.chart-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#chartCanvas {
+  width: 100% !important;
+  height: 380px !important;
+  background: transparent;
+}
+#latencyChart {
+  width: 100% !important;
+  height: 280px !important;
+  background: transparent;
+}
+.chart-footer {
+  margin-top: 8px;
+  text-align: right;
+  font-size: 13px;
+  color: rgba(230,238,246,0.6);
 }
 @media (max-width: 720px){
   .map-container { height: 320px; }
   .info-row { flex-direction: column; }
   .stats { grid-template-columns: 1fr; gap: 12px; }
   .tag-list{ grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); }
+  #chartCanvas { height: 260px !important; }
+  #latencyChart { height: 200px !important; }
+  .chart-container { padding: 12px; width: calc(100% - 24px); }
 }
