@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Site Long</title>
+    <style>
+        /* Reset basique */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        header {
+            position: fixed;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        section {
+            min-height: 100vh;
+            padding: 100px 20px 50px 20px;
+        }
+
+        .home {
+            background: url('https://via.placeholder.com/1500x800') center/cover no-repeat;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3em;
+        }
+
+        .about { background-color: #f4f4f4; }
+        .services { background-color: #e2e2e2; }
+        .portfolio { background-color: #d1d1d1; }
+        .contact { background-color: #c0c0c0; }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #333;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav>
+        <a href="#home">Accueil</a>
+        <a href="#about">À propos</a>
+        <a href="#services">Services</a>
+        <a href="#portfolio">Portfolio</a>
+        <a href="#contact">Contact</a>
+    </nav>
+</header>
+
+<section id="home" class="home">
+    Bienvenue sur mon site
+</section>
+
+<section id="about" class="about">
+    <h1>À propos</h1>
+    <p>Je suis un développeur passionné par le web et j’aime créer des sites modernes et interactifs. Ce site long vous montre différentes sections avec un défilement fluide.</p>
+</section>
+
+<section id="services" class="services">
+    <h1>Services</h1>
+    <ul>
+        <li>Développement web</li>
+        <li>Design UX/UI</li>
+        <li>Optimisation SEO</li>
+        <li>Maintenance et support</li>
+    </ul>
+</section>
+
+<section id="portfolio" class="portfolio">
+    <h1>Portfolio</h1>
+    <p>Voici quelques projets récents que j’ai réalisés :</p>
+    <div>
+        <img src="https://via.placeholder.com/300x200" alt="Projet 1">
+        <img src="https://via.placeholder.com/300x200" alt="Projet 2">
+        <img src="https://via.placeholder.com/300x200" alt="Projet 3">
+    </div>
+</section>
+
+<section id="contact" class="contact">
+    <h1>Contact</h1>
+    <p>Envoyez-moi un message :</p>
+    <form>
+        <input type="text" placeholder="Nom" required><br><br>
+        <input type="email" placeholder="Email" required><br><br>
+        <textarea placeholder="Message" required></textarea><br><br>
+        <button type="submit">Envoyer</button>
+    </form>
+</section>
+
+<footer>
+    &copy; 2025 Mon Site Long
+</footer>
+
+</body>
+</html>
