@@ -1,70 +1,56 @@
 const express = require('express');
-const baliseRoute = require('./routes/balise');
-const heatmapRoute = require('./routes/heatmap');
+const baliseRoute = require('./routes/balise'); // Assurez-vous que le dossier 'routes' existe
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
-app.use(express.static('public'));
-
-app.use('/api/balise', baliseRoute);
-app.use('/api/heatmap', heatmapRoute);
-
-app.get('/tag.js', (req, res) => {
-  const tagId = req.query.tag;
+app.get('/tag.js', function(req, res) {
+  var tagId = req.query.tag;
   
   if (!tagId) {
     return res.status(400).send('// Missing tag parameter');
   }
 
-  const trackingScript = `
-(function() {
-  const TAG_ID = '${tagId}';
-  const API_URL = '${req.protocol}://${req.get('host')}/api';
-  
-  function getDeviceType() {
-    const ua = navigator.userAgent;
-    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
-      return 'tablet';
-    }
-    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
-      return 'mobile';
-    }
-    return 'desktop';
+  var host = req.protocol + '://' + req.get('host');
+
+  // Construction du script corrigée (plus lisible et sans erreur de syntaxe)
+  var script = `
+(function(){
+  var TAG_ID="${tagId}";
+  var API_URL="${host}/api";
+
+  function getDeviceType(){
+    var ua=navigator.userAgent;
+    if(/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return "tablet";
+    if(/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return "mobile";
+    return "desktop";
   }
 
-  function getBrowser() {
-    const ua = navigator.userAgent;
-    if (ua.indexOf('Firefox') > -1) return 'firefox';
-    if (ua.indexOf('Chrome') > -1) return 'chrome';
-    if (ua.indexOf('Safari') > -1) return 'safari';
-    if (ua.indexOf('Edge') > -1) return 'edge';
-    return 'other';
+  function getBrowser(){
+    var ua=navigator.userAgent;
+    if(ua.indexOf("Firefox")>-1) return "firefox";
+    if(ua.indexOf("Chrome")>-1) return "chrome";
+    if(ua.indexOf("Safari")>-1) return "safari";
+    if(ua.indexOf("Edge")>-1) return "edge";
+    return "other";
   }
 
-  function getReferrerType() {
-    const ref = document.referrer;
-    if (!ref) return 'direct';
-    if (ref.includes('google') || ref.includes('bing') || ref.includes('yahoo')) return 'search';
-    if (ref.includes('facebook') || ref.includes('twitter') || ref.includes('instagram')) return 'social';
-    return 'referral';
+  function getReferrerType(){
+    var ref=document.referrer;
+    if(!ref) return "direct";
+    if(ref.indexOf("google")>-1||ref.indexOf("bing")>-1||ref.indexOf("yahoo")>-1) return "search";
+    if(ref.indexOf("facebook")>-1||ref.indexOf("twitter")>-1||ref.indexOf("instagram")>-1) return "social";
+    return "referral";
   }
 
-  const data = {
+  var data={
     tag: TAG_ID,
     page: window.location.pathname + window.location.search,
     referrer: document.referrer,
@@ -77,64 +63,67 @@ app.get('/tag.js', (req, res) => {
     timestamp: Date.now()
   };
 
-  fetch(API_URL + '/balise/' + TAG_ID + '/track', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+  fetch(API_URL+"/balise/"+TAG_ID+"/track", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
     body: JSON.stringify(data)
-  }).catch(function(err) {
-    console.error('Visitor Counter tracking error:', err);
-  });
+  }).then(function(){ console.log("Tracked!"); }).catch(function(e){ console.error("Track error:",e); });
 
-  let startTime = Date.now();
-  let isVisible = !document.hidden;
+  var startTime=Date.now();
+  var isVisible=!document.hidden;
 
-  document.addEventListener('visibilitychange', function() {
-    if (document.hidden && isVisible) {
-      const timeSpent = Date.now() - startTime;
-      navigator.sendBeacon(
-        API_URL + '/balise/' + TAG_ID + '/time',
-        JSON.stringify({ page: window.location.pathname, time: timeSpent })
-      );
-      isVisible = false;
-    } else if (!document.hidden) {
-      startTime = Date.now();
-      isVisible = true;
+  document.addEventListener("visibilitychange", function(){
+    if(document.hidden && isVisible){
+      var t=Date.now()-startTime;
+      navigator.sendBeacon(API_URL+"/balise/"+TAG_ID+"/time", JSON.stringify({page:window.location.pathname, time:t}));
+      isVisible=false;
+    } else if(!document.hidden){
+      startTime=Date.now();
+      isVisible=true;
     }
   });
 
-  window.addEventListener('beforeunload', function() {
-    if (isVisible) {
-      const timeSpent = Date.now() - startTime;
-      navigator.sendBeacon(
-        API_URL + '/balise/' + TAG_ID + '/time',
-        JSON.stringify({ page: window.location.pathname, time: timeSpent })
-      );
+  window.addEventListener("beforeunload", function(){
+    if(isVisible){
+      var t=Date.now()-startTime;
+      navigator.sendBeacon(API_URL+"/balise/"+TAG_ID+"/time", JSON.stringify({page:window.location.pathname, time:t}));
     }
   });
 })();
 `;
 
   res.setHeader('Content-Type', 'application/javascript');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
-  res.send(trackingScript);
+  res.send(script);
 });
 
-app.get('/', (req, res) => {
-  res.redirect('/index/index.html');
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+// Important pour supporter navigator.sendBeacon qui envoie parfois du text/plain
+app.use(express.text({ type: 'text/plain' }));
+
+app.use(function(req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
 });
 
-app.use((req, res) => {
+app.use(express.static('public'));
+
+app.use('/api/balise', baliseRoute);
+
+app.get('/', function(req, res) {
+  // Redirection ou message d'accueil si pas de fichier index.html
+  res.send('Server is running. Access /tag.js?tag=MYTAG to get the script.');
+});
+
+app.use(function(req, res) {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error' });
-});
-
-app.listen(port, '0.0.0.0', () => {
-  console.log(`🚀 Visitor Counter server running on http://localhost:${port}`);
-  console.log(`📊 Dashboard: http://localhost:${port}/index/index.html`);
+app.listen(port, '0.0.0.0', function() {
+  console.log('Server running on http://localhost:' + port);
 });

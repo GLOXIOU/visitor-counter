@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'visitor_tags_v1';
-const THEME_KEY = 'visiter:theme';
+const THEME_KEY = 'visiter: theme';
 
 function qs(selector) {
   return document.querySelector(selector);
@@ -7,18 +7,20 @@ function qs(selector) {
 
 function applyTheme(theme) {
   if (theme === 'light') {
-    document.body.classList.add('light-theme');
-    qs('#themeBtn').textContent = '☀️';
+    document.body.classList. add('light-theme');
+    const btn = qs('#themeBtn');
+    if (btn) btn.textContent = '☀️';
   } else {
     document.body.classList.remove('light-theme');
-    qs('#themeBtn').textContent = '🌙';
+    const btn = qs('#themeBtn');
+    if (btn) btn.textContent = '🌙';
   }
 }
 
 function toggleTheme() {
   const current = localStorage.getItem(THEME_KEY) || 'dark';
   const next = current === 'dark' ? 'light' : 'dark';
-  localStorage.setItem(THEME_KEY, next);
+  localStorage. setItem(THEME_KEY, next);
   applyTheme(next);
 }
 
@@ -44,15 +46,17 @@ function saveTags(list) {
 
 function genCode(length = 10) {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const array = new Uint32Array(length);
+  crypto.getRandomValues(array);
   let out = '';
   for (let i = 0; i < length; i++) {
-    out += chars[Math.floor(Math.random() * chars.length)];
+    out += chars[array[i] % chars.length];
   }
   return out;
 }
 
 function snippetFor(code) {
-  return `<script async src="${window.location.origin}/tag.js?tag=${code}"></script>`;
+  return `<script async src="${window.location.origin}/tag.js?tag=${code}"><\/script>`;
 }
 
 function createTagElement(item) {
@@ -64,7 +68,7 @@ function createTagElement(item) {
 
   const pill = document.createElement('div');
   pill.className = 'tag-pill';
-  pill.textContent = item.name.charAt(0).toUpperCase();
+  pill.textContent = item.name. charAt(0).toUpperCase();
 
   const info = document.createElement('div');
   info.className = 'tag-info';
@@ -91,11 +95,11 @@ function createTagElement(item) {
   copyBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(snippetFor(item.code));
+      await navigator.clipboard.writeText(snippetFor(item. code));
       copyBtn.innerHTML = '✓ Copié';
       setTimeout(() => (copyBtn.innerHTML = '📋 Copier'), 1400);
     } catch {
-      copyBtn.innerHTML = '✗ Erreur';
+      copyBtn. innerHTML = '✗ Erreur';
       setTimeout(() => (copyBtn.innerHTML = '📋 Copier'), 1400);
     }
   });
@@ -114,9 +118,10 @@ function createTagElement(item) {
   delBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const ok = confirm(`Êtes-vous sûr de vouloir supprimer la balise "${item.name}" ?`);
-    if (!ok) return;
+    if (! ok) return;
     const updated = loadTags().filter(t => t.code !== item.code);
     saveTags(updated);
+    fetch(`/api/balise/${item.code}`, { method: 'DELETE' }).catch(() => {});
     render();
   });
 
@@ -128,7 +133,7 @@ function createTagElement(item) {
   li.appendChild(actions);
 
   li.addEventListener('click', (e) => {
-    if (!e.target.closest('.actions')) {
+    if (! e.target.closest('.actions')) {
       location.href = `../dashboard/dashboard.html?tag=${encodeURIComponent(item.code)}&name=${encodeURIComponent(item.name)}`;
     }
   });
@@ -142,7 +147,7 @@ function render() {
   const empty = qs('#empty');
   container.innerHTML = '';
 
-  if (!list.length) {
+  if (! list.length) {
     empty.style.display = 'block';
     return;
   }
@@ -186,22 +191,36 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && qs('#modal').getAttribute('aria-hidden') === 'false') {
+    if (e. key === 'Escape' && qs('#modal').getAttribute('aria-hidden') === 'false') {
       closeModal();
     }
   });
 
-  qs('#createForm').addEventListener('submit', (e) => {
+  qs('#tagName').addEventListener('input', () => {
+    const code = genCode();
+    qs('#generatedCode').value = code;
+    qs('#headSnippet').value = snippetFor(code);
+  });
+
+  qs('#createForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = qs('#tagName').value.trim();
     if (!name) return;
     const code = qs('#generatedCode').value || genCode();
     const list = loadTags();
     
-    if (list.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+    if (list.some(t => t. name. toLowerCase() === name.toLowerCase())) {
       alert('Une balise avec ce nom existe déjà.');
       return;
     }
+    
+    try {
+      await fetch(`/api/balise/${code}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+    } catch {}
     
     list.unshift({ name, code, created: Date.now() });
     saveTags(list);
@@ -210,13 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const successMsg = document.createElement('div');
     successMsg.textContent = `✓ Balise "${name}" créée avec succès`;
-    successMsg.style.cssText = `
+    successMsg. style.cssText = `
       position: fixed;
-      top: 100px;
-      right: 20px;
+      top:  100px;
+      right:  20px;
       background: #1db954;
       color: #042014;
-      padding: 14px 20px;
+      padding:  14px 20px;
       border-radius: 12px;
       font-weight: 600;
       box-shadow: 0 8px 24px rgba(29, 185, 84, 0.4);
@@ -225,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     document.body.appendChild(successMsg);
     setTimeout(() => {
-      successMsg.style.opacity = '0';
+      successMsg. style.opacity = '0';
       successMsg.style.transition = 'opacity 0.3s ease';
       setTimeout(() => successMsg.remove(), 300);
     }, 3000);
