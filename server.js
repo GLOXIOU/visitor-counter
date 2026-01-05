@@ -1,5 +1,5 @@
 const express = require('express');
-const baliseRoute = require('./routes/balise'); // Assurez-vous que le dossier 'routes' existe
+const baliseRoute = require('./routes/balise');
 const path = require('path');
 const fs = require('fs');
 
@@ -20,11 +20,20 @@ app.get('/tag.js', function(req, res) {
 
   var host = req.protocol + '://' + req.get('host');
 
-  // Construction du script corrigée (plus lisible et sans erreur de syntaxe)
   var script = `
 (function(){
   var TAG_ID="${tagId}";
   var API_URL="${host}/api";
+
+  function getVisitorId() {
+    var k = "visiter_vid_" + TAG_ID;
+    var v = localStorage.getItem(k);
+    if (!v) {
+      v = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      localStorage.setItem(k, v);
+    }
+    return v;
+  }
 
   function getDeviceType(){
     var ua=navigator.userAgent;
@@ -52,13 +61,12 @@ app.get('/tag.js', function(req, res) {
 
   var data={
     tag: TAG_ID,
+    visitorId: getVisitorId(),
     page: window.location.pathname + window.location.search,
     referrer: document.referrer,
     referrerType: getReferrerType(),
     device: getDeviceType(),
     browser: getBrowser(),
-    screenWidth: window.screen.width,
-    screenHeight: window.screen.height,
     language: navigator.language,
     timestamp: Date.now()
   };
@@ -67,7 +75,7 @@ app.get('/tag.js', function(req, res) {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify(data)
-  }).then(function(){ console.log("Tracked!"); }).catch(function(e){ console.error("Track error:",e); });
+  }).catch(function(e){});
 
   var startTime=Date.now();
   var isVisible=!document.hidden;
@@ -98,7 +106,6 @@ app.get('/tag.js', function(req, res) {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Important pour supporter navigator.sendBeacon qui envoie parfois du text/plain
 app.use(express.text({ type: 'text/plain' }));
 
 app.use(function(req, res, next) {
@@ -112,12 +119,10 @@ app.use(function(req, res, next) {
 });
 
 app.use(express.static('public'));
-
 app.use('/api/balise', baliseRoute);
 
 app.get('/', function(req, res) {
-  // Redirection ou message d'accueil si pas de fichier index.html
-  res.send('Server is running. Access /tag.js?tag=MYTAG to get the script.');
+  res.redirect('/index/index.html');
 });
 
 app.use(function(req, res) {

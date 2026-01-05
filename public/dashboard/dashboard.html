@@ -26,7 +26,7 @@
         <div class="info-value" id="tagName">—</div>
       </div>
       <div class="card info-card">
-        <div class="info-title">Date de création du tag</div>
+        <div class="info-title">Date de création</div>
         <div class="info-value" id="tagParam">—</div>
       </div>
     </div>
@@ -34,34 +34,8 @@
     <div class="controls-row panel card">
       <div class="controls-left">
         <div class="controls">
-          <div class="filter-group">
-            <label for="filterDevice" class="filter-label">Appareil</label>
-            <select id="filterDevice" class="filter-select" aria-label="Filtrer par appareil">
-              <option value="all">Tous</option>
-              <option value="desktop">Bureau</option>
-              <option value="mobile">Mobile</option>
-              <option value="tablet">Tablette</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label for="filterReferrer" class="filter-label">Source</label>
-            <select id="filterReferrer" class="filter-select" aria-label="Filtrer par source">
-              <option value="all">Tous</option>
-              <option value="direct">Direct</option>
-              <option value="social">Réseaux</option>
-              <option value="search">Recherche</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label for="filterCountry" class="filter-label">Pays</label>
-            <select id="filterCountry" class="filter-select" aria-label="Filtrer par pays">
-              <option value="all">Tous</option>
-              <option value="FR">France</option>
-              <option value="US">États-Unis</option>
-              <option value="DE">Allemagne</option>
-            </select>
-          </div>
           <button id="exportCsv" class="btn primary">Exporter CSV</button>
+          <button id="resetStats" class="btn danger">Réinitialiser les données</button>
         </div>
       </div>
       <div class="controls-right hint"></div>
@@ -73,13 +47,14 @@
 
     <div class="stats">
       <div class="stat-card-no-grow card" data-chart="pages">
-        <div class="stat-title">Pages trackées</div>
-        <div class="stat-value" id="pages-count">42</div>
+        <div class="stat-title">Pages vues</div>
+        <div class="stat-value" id="views-count">0</div>
+        <div class="card-hint">Total des chargements</div>
       </div>
 
       <div class="stat-card card" data-chart="visitors">
         <div class="stat-title">
-          Visiteurs
+          Visiteurs Uniques
           <div class="period-wrapper">
             <button id="periodButton" class="period-btn" aria-haspopup="true" aria-controls="periodList" aria-expanded="false">Aujourd'hui ▾</button>
             <ul id="periodList" class="period-list" role="menu" aria-labelledby="periodButton" hidden>
@@ -89,14 +64,14 @@
             </ul>
           </div>
         </div>
-        <div class="stat-value" id="today-visitors">128</div>
+        <div class="stat-value" id="unique-visitors">0</div>
         <div class="card-hint">Cliquez pour voir le graphique</div>
       </div>
 
       <div class="stat-card card" data-chart="total">
-        <div class="stat-title">Visiteurs totaux</div>
-        <div class="stat-value" id="total-visitors">9583</div>
-        <div class="card-hint">Cliquez pour voir le graphique</div>
+        <div class="stat-title">Vues totales</div>
+        <div class="stat-value" id="total-views">0</div>
+        <div class="card-hint">Depuis la création</div>
       </div>
     </div>
 
@@ -112,8 +87,8 @@
                 <th>#</th>
                 <th>Page</th>
                 <th>Vues</th>
-                <th>Visiteurs uniques</th>
-                <th>Temps moyen</th>
+                <th>Uniques</th>
+                <th>Temps</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -124,14 +99,13 @@
       <div class="panel card">
         <div class="panel-header">
           <h3>Répartition</h3>
-          <div id="breakdownLegend" class="breakdown-legend"></div>
         </div>
         <div class="breakdowns">
           <div class="breakdown-item">
-            <canvas id="deviceChart" width="300" height="200"></canvas>
+            <canvas id="deviceChart" width="200" height="200"></canvas>
           </div>
           <div class="breakdown-item">
-            <canvas id="browserChart" width="300" height="200"></canvas>
+            <canvas id="langChart" width="200" height="200"></canvas>
           </div>
         </div>
       </div>
