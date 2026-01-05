@@ -58,3 +58,9 @@ Expect improvements, UI updates, and new features soon.
 
 Pull requests and feature suggestions are welcome!  
 Feel free to open an issue to discuss improvements.
+
+---
+
+## 🧾 License
+
+© GLOXIOU 2026
