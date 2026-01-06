@@ -6,6 +6,8 @@ const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.set('trust proxy', true);
+
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -77,26 +79,6 @@ app.get('/tag.js', function(req, res) {
     body: JSON.stringify(data)
   }).catch(function(e){});
 
-  var startTime=Date.now();
-  var isVisible=!document.hidden;
-
-  document.addEventListener("visibilitychange", function(){
-    if(document.hidden && isVisible){
-      var t=Date.now()-startTime;
-      navigator.sendBeacon(API_URL+"/balise/"+TAG_ID+"/time", JSON.stringify({page:window.location.pathname, time:t}));
-      isVisible=false;
-    } else if(!document.hidden){
-      startTime=Date.now();
-      isVisible=true;
-    }
-  });
-
-  window.addEventListener("beforeunload", function(){
-    if(isVisible){
-      var t=Date.now()-startTime;
-      navigator.sendBeacon(API_URL+"/balise/"+TAG_ID+"/time", JSON.stringify({page:window.location.pathname, time:t}));
-    }
-  });
 })();
 `;
 

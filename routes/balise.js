@@ -19,12 +19,12 @@ function loadTagData(tagId) {
   ensureDataDir();
   var filePath = getTagFilePath(tagId);
   if (!fs.existsSync(filePath)) {
-    return { tagId: tagId, created: Date.now(), visits: [], pageTime: {} };
+    return { tagId: tagId, created: Date.now(), visits: [] };
   }
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   } catch (e) {
-    return { tagId: tagId, created: Date.now(), visits: [], pageTime: {} };
+    return { tagId: tagId, created: Date.now(), visits: [] };
   }
 }
 
@@ -51,6 +51,13 @@ router.post('/:id/track', function(req, res) {
 
   var data = cleanOldData(loadTagData(tagId));
   
+  // Récupération de l'IP
+  var ip = req.ip || req.connection.remoteAddress;
+  // Nettoyage format IPv6 local ::1 ou ::ffff:
+  if (ip && ip.includes('::ffff:')) {
+    ip = ip.split('::ffff:')[1];
+  }
+
   data.visits.push({
     visitorId: visit.visitorId || 'anon',
     page: visit.page || '/',
@@ -59,33 +66,10 @@ router.post('/:id/track', function(req, res) {
     device: visit.device || 'desktop',
     browser: visit.browser || 'other',
     language: visit.language || 'unknown',
-    timestamp: visit.timestamp
+    timestamp: visit.timestamp,
+    ip: ip // Stockage de l'IP pour la map
   });
 
-  saveTagData(tagId, data);
-  res.json({ success: true });
-});
-
-router.post('/:id/time', function(req, res) {
-  var tagId = req.params.id;
-  var body = req.body;
-  
-  if (typeof body === 'string') {
-    try { body = JSON.parse(body); } catch (e) { return res.status(400).json({ error: 'Invalid JSON' }); }
-  }
-  
-  if (!body.page || typeof body.time !== 'number') {
-    return res.status(400).json({ error: 'Invalid time data' });
-  }
-
-  var data = loadTagData(tagId);
-  if (!data.pageTime) data.pageTime = {};
-  
-  if (!data.pageTime[body.page]) {
-    data.pageTime[body.page] = { totalTime: 0, count: 0 };
-  }
-  data.pageTime[body.page].totalTime += body.time;
-  data.pageTime[body.page].count += 1;
   saveTagData(tagId, data);
   res.json({ success: true });
 });
@@ -94,7 +78,6 @@ router.post('/:id/reset', function(req, res) {
   var tagId = req.params.id;
   var data = loadTagData(tagId);
   data.visits = [];
-  data.pageTime = {};
   data.created = Date.now();
   saveTagData(tagId, data);
   res.json({ success: true });
@@ -126,15 +109,17 @@ router.get('/:id/stats', function(req, res) {
   });
 
   var topPages = Object.keys(pages).map(function(url) {
-    var avgTime = (data.pageTime && data.pageTime[url]) ? Math.round(data.pageTime[url].totalTime / data.pageTime[url].count / 1000) : 0;
-    return { url: url, views: pages[url].views, uniques: pages[url].visitors.size, avgTime: avgTime + 's' };
+    return { url: url, views: pages[url].views, uniques: pages[url].visitors.size };
   }).sort(function(a, b) { return b.views - a.views; }).slice(0, 10).map(function(p, i) {
-    return { rank: i + 1, url: p.url, views: p.views, uniques: p.uniques, avgTime: p.avgTime };
+    return { rank: i + 1, url: p.url, views: p.views, uniques: p.uniques };
   });
 
   var devices = { mobile: 0, desktop: 0, tablet: 0 };
   var browsers = { chrome: 0, safari: 0, firefox: 0, edge: 0, other: 0 };
   var languages = {};
+  
+  // Collecte des IPs uniques pour la map côté client
+  var uniqueIps = new Set();
 
   data.visits.forEach(function(v) {
     if (devices[v.device] !== undefined) devices[v.device]++;
@@ -143,6 +128,10 @@ router.get('/:id/stats', function(req, res) {
     var lang = v.language ? v.language.split('-')[0].toUpperCase() : '??';
     if(!languages[lang]) languages[lang] = 0;
     languages[lang]++;
+    
+    if (v.ip && v.ip !== '::1' && v.ip !== '127.0.0.1') {
+        uniqueIps.add(v.ip);
+    }
   });
 
   var topLanguages = Object.keys(languages).map(function(k){
@@ -171,6 +160,18 @@ router.get('/:id/stats', function(req, res) {
     data.visits.forEach(function(v) { if (v.timestamp >= mStart && v.timestamp < mEnd) mcount++; });
     monthlyData.push(mcount);
   }
+  
+  // Pour l'export CSV
+  var rawVisits = data.visits.map(function(v){
+      return { 
+          timestamp: new Date(v.timestamp).toISOString(), 
+          page: v.page, 
+          device: v.device, 
+          browser: v.browser,
+          visitorId: v.visitorId,
+          country: "Unknown" // Sera enrichi coté client éventuellement ou laissé tel quel
+      };
+  });
 
   res.json({
     tagId: tagId,
@@ -179,14 +180,15 @@ router.get('/:id/stats', function(req, res) {
       today: { views: todayVisits.length, visitors: countUnique(todayVisits) }, 
       month: { views: monthVisits.length, visitors: countUnique(monthVisits) }, 
       year: { views: yearVisits.length, visitors: countUnique(yearVisits) }, 
-      total: data.visits.length, 
-      pages: topPages.length 
+      total: data.visits.length
     },
     topPages: topPages,
     devices: devices,
     browsers: browsers,
     languages: topLanguages,
-    charts: { hourly: hourlyData, daily: dailyData, monthly: monthlyData }
+    charts: { hourly: hourlyData, daily: dailyData, monthly: monthlyData },
+    ips: Array.from(uniqueIps), // Envoi des IPs pour la map
+    rawVisits: rawVisits // Pour l'export CSV
   });
 });
 
