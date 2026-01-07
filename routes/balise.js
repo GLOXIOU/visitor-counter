@@ -41,6 +41,10 @@ function cleanOldData(data) {
   return data;
 }
 
+function isIPv4(ip) {
+  return ip && /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
+}
+
 router.post('/:id/track', function(req, res) {
   var tagId = req.params.id;
   var visit = req.body;
@@ -51,11 +55,31 @@ router.post('/:id/track', function(req, res) {
 
   var data = cleanOldData(loadTagData(tagId));
   
-  // Récupération de l'IP
-  var ip = req.ip || req.connection.remoteAddress;
-  // Nettoyage format IPv6 local ::1 ou ::ffff:
-  if (ip && ip.includes('::ffff:')) {
-    ip = ip.split('::ffff:')[1];
+  var serverIp = req.headers['x-real-ip'] || 
+                 req.headers['x-forwarded-for'] || 
+                 req.ip || 
+                 req.connection.remoteAddress;
+  
+  if (serverIp && serverIp.indexOf(',') > -1) {
+    serverIp = serverIp.split(',')[0].trim();
+  }
+  
+  if (serverIp && serverIp.includes('::ffff:')) {
+    serverIp = serverIp.replace('::ffff:', '');
+  }
+  
+  if (serverIp === '::1') {
+    serverIp = '127.0.0.1';
+  }
+  
+  if (serverIp) {
+    serverIp = serverIp.trim();
+  }
+
+  var ip = serverIp;
+  
+  if (visit.clientIpv4 && isIPv4(visit.clientIpv4)) {
+    ip = visit.clientIpv4;
   }
 
   data.visits.push({
@@ -67,7 +91,7 @@ router.post('/:id/track', function(req, res) {
     browser: visit.browser || 'other',
     language: visit.language || 'unknown',
     timestamp: visit.timestamp,
-    ip: ip // Stockage de l'IP pour la map
+    ip: ip || 'unknown'
   });
 
   saveTagData(tagId, data);
@@ -117,8 +141,6 @@ router.get('/:id/stats', function(req, res) {
   var devices = { mobile: 0, desktop: 0, tablet: 0 };
   var browsers = { chrome: 0, safari: 0, firefox: 0, edge: 0, other: 0 };
   var languages = {};
-  
-  // Collecte des IPs uniques pour la map côté client
   var uniqueIps = new Set();
 
   data.visits.forEach(function(v) {
@@ -161,7 +183,6 @@ router.get('/:id/stats', function(req, res) {
     monthlyData.push(mcount);
   }
   
-  // Pour l'export CSV
   var rawVisits = data.visits.map(function(v){
       return { 
           timestamp: new Date(v.timestamp).toISOString(), 
@@ -169,7 +190,8 @@ router.get('/:id/stats', function(req, res) {
           device: v.device, 
           browser: v.browser,
           visitorId: v.visitorId,
-          country: "Unknown" // Sera enrichi coté client éventuellement ou laissé tel quel
+          ip: v.ip,
+          country: "Unknown"
       };
   });
 
@@ -187,8 +209,8 @@ router.get('/:id/stats', function(req, res) {
     browsers: browsers,
     languages: topLanguages,
     charts: { hourly: hourlyData, daily: dailyData, monthly: monthlyData },
-    ips: Array.from(uniqueIps), // Envoi des IPs pour la map
-    rawVisits: rawVisits // Pour l'export CSV
+    ips: Array.from(uniqueIps),
+    rawVisits: rawVisits
   });
 });
 

@@ -61,23 +61,35 @@ app.get('/tag.js', function(req, res) {
     return "referral";
   }
 
-  var data={
-    tag: TAG_ID,
-    visitorId: getVisitorId(),
-    page: window.location.pathname + window.location.search,
-    referrer: document.referrer,
-    referrerType: getReferrerType(),
-    device: getDeviceType(),
-    browser: getBrowser(),
-    language: navigator.language,
-    timestamp: Date.now()
-  };
+  fetch('https://api.ipify.org?format=json')
+    .then(function(response) { return response.json(); })
+    .then(function(ipData) {
+      sendTracking(ipData.ip);
+    })
+    .catch(function() {
+      sendTracking(null);
+    });
 
-  fetch(API_URL+"/balise/"+TAG_ID+"/track", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(data)
-  }).catch(function(e){});
+  function sendTracking(clientIpv4) {
+    var data={
+      tag: TAG_ID,
+      visitorId: getVisitorId(),
+      page: window.location.pathname + window.location.search,
+      referrer: document.referrer,
+      referrerType: getReferrerType(),
+      device: getDeviceType(),
+      browser: getBrowser(),
+      language: navigator.language,
+      timestamp: Date.now(),
+      clientIpv4: clientIpv4
+    };
+
+    fetch(API_URL+"/balise/"+TAG_ID+"/track", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(data)
+    }).catch(function(e){});
+  }
 
 })();
 `;
@@ -111,6 +123,6 @@ app.use(function(req, res) {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(port, '0.0.0.0', function() {
+app.listen(port, function() {
   console.log('Server running on http://localhost:' + port);
 });

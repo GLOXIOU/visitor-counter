@@ -113,7 +113,6 @@
 
   let modalChart = null;
   let openInfo = { type: null, period: null };
-  const periodOrder = ['today','month','year'];
 
   function generateLabelsAndData(type, period){
     if (!apiData) return { labels: [], data: [], label: 'Données' };
@@ -272,7 +271,7 @@
     tbody.innerHTML = '';
     apiData.topPages.forEach(row => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${row.rank}</td><td>${row.url}</td><td>${formatNumber(row.views)}</td><td>${formatNumber(row.uniques)}</td><td>${row.avgTime}</td>`;
+      tr.innerHTML = `<td>${row.rank}</td><td>${row.url}</td><td>${formatNumber(row.views)}</td><td>${formatNumber(row.uniques)}</td><td>${row.avgTime || '-'}</td>`;
       tbody.appendChild(tr);
     });
   }
@@ -319,11 +318,48 @@
   }
 
   let mapInstance = null;
+  let mapMarkers = null;
+  let geoCache = {};
+
   function initMap(){
     const mapEl = document.getElementById('map');
     if(!mapEl) return;
     mapInstance = L.map('map', {center:[20,0], zoom: 2, attributionControl:false});
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(mapInstance);
+    mapMarkers = L.layerGroup().addTo(mapInstance);
+  }
+
+  async function updateMapLocations(ips) {
+    if (!mapInstance || !mapMarkers || !ips || ips.length === 0) return;
+    
+    // Filtrage des IPs pour ne demander que les nouvelles
+    const ipsToFetch = ips.filter(ip => !geoCache[ip]);
+    
+    for (const ip of ipsToFetch) {
+        try {
+            // Utilisation de ipwho.is qui supporte HTTPS et IPv4
+            const res = await fetch(`https://ipwho.is/${ip}`);
+            const data = await res.json();
+            if (data.success) {
+                geoCache[ip] = { lat: data.latitude, lon: data.longitude, city: data.city, country: data.country };
+            } else {
+                geoCache[ip] = { failed: true };
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    mapMarkers.clearLayers();
+    
+    ips.forEach(ip => {
+        const info = geoCache[ip];
+        if (info && !info.failed) {
+            L.marker([info.lat, info.lon])
+             .addTo(mapMarkers)
+             .bindPopup(`<b>${info.city}, ${info.country}</b><br>${ip}`);
+        }
+    });
   }
 
   function initLiveFeed(){
@@ -347,6 +383,9 @@
         renderLiveList();
         updateStatsForPeriod(currentPeriod);
         renderTopPages();
+        if(apiData.ips && apiData.ips.length > 0) {
+             updateMapLocations(apiData.ips);
+        }
       }
     }, 15000);
   }
@@ -388,6 +427,10 @@
     initLiveFeed();
     renderServicesStatus();
     updateStatsForPeriod('today');
+
+    if (apiData && apiData.ips) {
+        updateMapLocations(apiData.ips);
+    }
 
     const resetBtn = document.getElementById('resetStats');
     if(resetBtn) resetBtn.addEventListener('click', resetStats);
