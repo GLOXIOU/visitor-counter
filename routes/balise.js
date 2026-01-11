@@ -45,6 +45,31 @@ function isIPv4(ip) {
   return ip && /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
 }
 
+function anonymizeIp(ip) {
+  if (!ip || ip === 'unknown') return 'unknown';
+  
+  if (ip.indexOf('::ffff:') === 0) {
+    ip = ip.replace('::ffff:', '');
+  }
+
+  if (ip.indexOf('.') > -1) {
+    var parts = ip.split('.');
+    if (parts.length === 4) {
+      parts[3] = '0';
+      return parts.join('.');
+    }
+  }
+
+  if (ip.indexOf(':') > -1) {
+    var parts = ip.split(':');
+    if (parts.length > 3) {
+      return parts.slice(0, 3).join(':') + '::';
+    }
+  }
+
+  return 'unknown';
+}
+
 router.post('/:id/track', function(req, res) {
   var tagId = req.params.id;
   var visit = req.body;
@@ -76,11 +101,13 @@ router.post('/:id/track', function(req, res) {
     serverIp = serverIp.trim();
   }
 
-  var ip = serverIp;
+  var rawIp = serverIp;
   
   if (visit.clientIpv4 && isIPv4(visit.clientIpv4)) {
-    ip = visit.clientIpv4;
+    rawIp = visit.clientIpv4;
   }
+
+  var safeIp = anonymizeIp(rawIp);
 
   data.visits.push({
     visitorId: visit.visitorId || 'anon',
@@ -91,7 +118,7 @@ router.post('/:id/track', function(req, res) {
     browser: visit.browser || 'other',
     language: visit.language || 'unknown',
     timestamp: visit.timestamp,
-    ip: ip || 'unknown'
+    ip: safeIp
   });
 
   saveTagData(tagId, data);
@@ -151,7 +178,7 @@ router.get('/:id/stats', function(req, res) {
     if(!languages[lang]) languages[lang] = 0;
     languages[lang]++;
     
-    if (v.ip && v.ip !== '::1' && v.ip !== '127.0.0.1') {
+    if (v.ip && v.ip !== 'unknown') {
         uniqueIps.add(v.ip);
     }
   });
