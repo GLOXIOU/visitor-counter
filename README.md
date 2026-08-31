@@ -50,7 +50,7 @@ http://localhost:3000
 ## 🧱 Development Status
 
 🚧 **This project is still under active development.**  
-Expect improvements, UI updates, and new features soon.
+Expect improvements, UI updates, and new features soon
 
 ---
 
