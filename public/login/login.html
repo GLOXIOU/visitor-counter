@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>Visitor Counter — Connexion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../common/common.css">
+  <link rel="stylesheet" href="../index/styles.css">
+  <style>
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+    }
+    .login-card .brand {
+      margin-bottom: 24px;
+    }
+    .login-card .btn {
+      width: 100%;
+      justify-content: center;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main class="login-wrap">
+    <section class="panel login-card">
+      <div class="brand">Visitor Counter</div>
+      <form id="loginForm">
+        <div>
+          <label for="password">Mot de passe</label>
+          <input id="password" type="password" autocomplete="current-password" required autofocus>
+        </div>
+        <p id="loginError" class="form-error" hidden></p>
+        <button type="submit" class="btn primary">Se connecter</button>
+      </form>
+    </section>
+  </main>
+  <script src="../common/common.js"></script>
+  <script src="login.js"></script>
+</body>
+</html>

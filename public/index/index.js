@@ -1,278 +1,198 @@
-const STORAGE_KEY = 'visitor_tags_v1';
-const THEME_KEY = 'visiter: theme';
+(function () {
+  const LEGACY_KEY = 'visitor_tags_v1';
+  let tags = [];
+  let base = location.origin;
 
-function qs(selector) {
-  return document.querySelector(selector);
-}
+  const $ = id => document.getElementById(id);
 
-function applyTheme(theme) {
-  if (theme === 'light') {
-    document.body.classList. add('light-theme');
-    const btn = qs('#themeBtn');
-    if (btn) btn.textContent = '☀️';
-  } else {
-    document.body.classList.remove('light-theme');
-    const btn = qs('#themeBtn');
-    if (btn) btn.textContent = '🌙';
+  function dashboardUrl(tag) {
+    return `../dashboard/dashboard.html?tag=${encodeURIComponent(tag.tagId)}`;
   }
-}
 
-function toggleTheme() {
-  const current = localStorage.getItem(THEME_KEY) || 'dark';
-  const next = current === 'dark' ? 'light' : 'dark';
-  localStorage. setItem(THEME_KEY, next);
-  applyTheme(next);
-}
-
-function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY) || 'dark';
-  applyTheme(saved);
-  const btn = qs('#themeBtn');
-  if (btn) btn.addEventListener('click', toggleTheme);
-}
-
-function loadTags() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  try {
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
+  function instrumentUrl(tag) {
+    return `../instrument/instrument.html?tag=${encodeURIComponent(tag.tagId)}`;
   }
-}
 
-function saveTags(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
-function genCode(length = 10) {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  const array = new Uint32Array(length);
-  crypto.getRandomValues(array);
-  let out = '';
-  for (let i = 0; i < length; i++) {
-    out += chars[array[i] % chars.length];
+  function button(className, html, onClick) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = className;
+    btn.innerHTML = html;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      onClick(btn);
+    });
+    return btn;
   }
-  return out;
-}
 
-function snippetFor(code) {
-  return `<script async src="${window.location.origin}/tag.js?tag=${code}"><\/script>`;
-}
+  function createTagElement(tag) {
+    const li = document.createElement('li');
+    li.className = 'tag-item';
 
-function createTagElement(item) {
-  const li = document.createElement('li');
-  li.className = 'tag-item';
+    const statsLine = tag.total
+      ? `<span>${VC.fmtNumber(tag.views30)} vues · ${VC.fmtNumber(tag.visitors30)} visiteurs (30 j)</span><span>Dernière visite ${VC.esc(VC.fmtRelative(tag.lastVisit))}</span>`
+      : '<span>Aucune visite enregistrée pour l\'instant</span>';
+    const live = tag.live ? `<span class="tag-live"><span class="live-dot"></span>${tag.live} en ligne</span>` : '';
+    const hosts = tag.hosts && tag.hosts.length ? `<div class="tag-hosts">${tag.hosts.map(h => `<span>${VC.esc(h)}</span>`).join('')}</div>` : '';
 
-  const main = document.createElement('div');
-  main.className = 'tag-main';
+    li.innerHTML = `
+      <div class="tag-main">
+        <div class="tag-pill">${VC.esc(tag.name.charAt(0).toUpperCase())}</div>
+        <div class="tag-info">
+          <div class="tag-name">${VC.esc(tag.name)}</div>
+          <div class="tag-code">${VC.esc(tag.tagId)}</div>
+        </div>
+        ${live}
+      </div>
+      <div class="tag-stats">${statsLine}</div>
+      ${hosts}`;
 
-  const pill = document.createElement('div');
-  pill.className = 'tag-pill';
-  pill.textContent = item.name. charAt(0).toUpperCase();
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    actions.appendChild(button('btn small', '📋 Copier le snippet', async btn => {
+      const ok = await VC.copy(VC.snippet(tag.tagId, base));
+      btn.innerHTML = ok ? '✓ Copié' : '✗ Erreur';
+      setTimeout(() => (btn.innerHTML = '📋 Copier le snippet'), 1400);
+    }));
+    actions.appendChild(button('btn ghost small', '📊 Dashboard', () => {
+      location.href = dashboardUrl(tag);
+    }));
+    actions.appendChild(button('btn ghost small', '🛠️ Baliser le site', () => {
+      location.href = instrumentUrl(tag);
+    }));
+    actions.appendChild(button('btn secondary small danger-hover', '🗑️ Supprimer', async () => {
+      if (!confirm(`Supprimer la balise "${tag.name}" et toutes ses statistiques ?`)) return;
+      try {
+        await VC.api(`/api/balise/${encodeURIComponent(tag.tagId)}`, { method: 'DELETE' });
+        VC.toast(`Balise "${tag.name}" supprimée`);
+        await load();
+      } catch (e) {
+        VC.toast(e.message, 'error');
+      }
+    }));
+    li.appendChild(actions);
 
-  const info = document.createElement('div');
-  info.className = 'tag-info';
+    li.addEventListener('click', e => {
+      if (!e.target.closest('.actions')) location.href = dashboardUrl(tag);
+    });
+    return li;
+  }
 
-  const name = document.createElement('div');
-  name.className = 'tag-name';
-  name.textContent = item.name;
+  function render() {
+    const list = $('tagList');
+    $('loading').hidden = true;
+    list.innerHTML = '';
+    $('empty').hidden = tags.length > 0;
+    tags.forEach(tag => list.appendChild(createTagElement(tag)));
+  }
 
-  const code = document.createElement('div');
-  code.className = 'tag-code';
-  code.textContent = item.code;
-
-  info.appendChild(name);
-  info.appendChild(code);
-  main.appendChild(pill);
-  main.appendChild(info);
-
-  const actions = document.createElement('div');
-  actions.className = 'actions';
-
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'btn small';
-  copyBtn.innerHTML = '📋 Copier';
-  copyBtn.addEventListener('click', async (e) => {
-    e.stopPropagation();
+  async function syncLegacy() {
+    let legacy = [];
     try {
-      await navigator.clipboard.writeText(snippetFor(item. code));
-      copyBtn.innerHTML = '✓ Copié';
-      setTimeout(() => (copyBtn.innerHTML = '📋 Copier'), 1400);
-    } catch {
-      copyBtn. innerHTML = '✗ Erreur';
-      setTimeout(() => (copyBtn.innerHTML = '📋 Copier'), 1400);
+      legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) || '[]');
+    } catch (e) {
+      legacy = [];
     }
-  });
-
-  const viewBtn = document.createElement('button');
-  viewBtn.className = 'btn ghost small';
-  viewBtn.innerHTML = '📊 Dashboard';
-  viewBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    location.href = `../dashboard/dashboard.html?tag=${encodeURIComponent(item.code)}&name=${encodeURIComponent(item.name)}`;
-  });
-
-  const delBtn = document.createElement('button');
-  delBtn.className = 'btn secondary small';
-  delBtn.innerHTML = '🗑️ Supprimer';
-  delBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const ok = confirm(`Êtes-vous sûr de vouloir supprimer la balise "${item.name}" ?`);
-    if (! ok) return;
-    const updated = loadTags().filter(t => t.code !== item.code);
-    saveTags(updated);
-    fetch(`/api/balise/${item.code}`, { method: 'DELETE' }).catch(() => {});
-    render();
-  });
-
-  actions.appendChild(copyBtn);
-  actions.appendChild(viewBtn);
-  actions.appendChild(delBtn);
-
-  li.appendChild(main);
-  li.appendChild(actions);
-
-  li.addEventListener('click', (e) => {
-    if (! e.target.closest('.actions')) {
-      location.href = `../dashboard/dashboard.html?tag=${encodeURIComponent(item.code)}&name=${encodeURIComponent(item.name)}`;
+    if (!Array.isArray(legacy) || !legacy.length) return false;
+    const known = new Set(tags.map(t => t.tagId));
+    let failed = 0;
+    for (const t of legacy) {
+      if (!t || !t.code || known.has(t.code)) continue;
+      try {
+        await VC.api(`/api/balise/${encodeURIComponent(t.code)}`, { method: 'POST', body: { name: t.name || t.code } });
+      } catch (e) {
+        failed += 1;
+      }
     }
-  });
-
-  return li;
-}
-
-function render() {
-  const list = loadTags();
-  const container = qs('#tagList');
-  const empty = qs('#empty');
-  container.innerHTML = '';
-
-  if (! list.length) {
-    empty.style.display = 'block';
-    return;
+    if (!failed) {
+      try { localStorage.removeItem(LEGACY_KEY); } catch (e) {}
+    }
+    return true;
   }
 
-  empty.style.display = 'none';
+  async function load() {
+    try {
+      tags = await VC.api('/api/balise');
+      if (await syncLegacy()) tags = await VC.api('/api/balise');
+      render();
+    } catch (e) {
+      if (e.message === 'auth') return;
+      $('loading').textContent = 'Impossible de charger les balises : ' + e.message;
+    }
+  }
 
-  list.forEach(item => {
-    const el = createTagElement(item);
-    container.appendChild(el);
-  });
-}
+  function refreshCode() {
+    const code = VC.genCode(10);
+    $('generatedCode').value = code;
+    $('headSnippet').value = VC.snippet(code, base);
+  }
 
-function openModal() {
-  const modal = qs('#modal');
-  modal.setAttribute('aria-hidden', 'false');
-  qs('#tagName').value = '';
-  const code = genCode();
-  qs('#generatedCode').value = code;
-  qs('#headSnippet').value = snippetFor(code);
-  setTimeout(() => qs('#tagName').focus(), 100);
-}
+  function openModal() {
+    $('modal').setAttribute('aria-hidden', 'false');
+    $('tagName').value = '';
+    $('formError').hidden = true;
+    refreshCode();
+    setTimeout(() => $('tagName').focus(), 100);
+  }
 
-function closeModal() {
-  qs('#modal').setAttribute('aria-hidden', 'true');
-}
+  function closeModal() {
+    $('modal').setAttribute('aria-hidden', 'true');
+  }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
-  render();
+  function selectAndCopy(el) {
+    el.addEventListener('click', async () => {
+      el.select();
+      if (await VC.copy(el.value)) {
+        el.classList.add('copied');
+        setTimeout(() => el.classList.remove('copied'), 400);
+        VC.toast('Copié dans le presse-papiers');
+      }
+    });
+  }
 
-  qs('#createBtn').addEventListener('click', (e) => {
-    e.preventDefault();
-    openModal();
-  });
+  async function init() {
+    const cfg = await VC.config();
+    base = cfg.publicUrl || location.origin;
 
-  qs('#closeModal').addEventListener('click', closeModal);
-  qs('#cancel').addEventListener('click', closeModal);
+    $('createBtn').addEventListener('click', openModal);
+    $('closeModal').addEventListener('click', closeModal);
+    $('cancel').addEventListener('click', closeModal);
+    $('modal').addEventListener('click', e => {
+      if (e.target === $('modal')) closeModal();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && $('modal').getAttribute('aria-hidden') === 'false') closeModal();
+    });
+    selectAndCopy($('generatedCode'));
+    selectAndCopy($('headSnippet'));
 
-  qs('#modal').addEventListener('click', (e) => {
-    if (e.target === qs('#modal')) closeModal();
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e. key === 'Escape' && qs('#modal').getAttribute('aria-hidden') === 'false') {
+    $('createForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = $('tagName').value.trim();
+      if (!name) return;
+      const code = $('generatedCode').value || VC.genCode(10);
+      if (tags.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+        $('formError').textContent = 'Une balise avec ce nom existe déjà.';
+        $('formError').hidden = false;
+        return;
+      }
+      try {
+        await VC.api(`/api/balise/${encodeURIComponent(code)}`, { method: 'POST', body: { name } });
+      } catch (err) {
+        $('formError').textContent = err.message;
+        $('formError').hidden = false;
+        return;
+      }
       closeModal();
-    }
-  });
+      VC.toast(`✓ Balise "${name}" créée`);
+      await load();
+    });
 
-  qs('#tagName').addEventListener('input', () => {
-    const code = genCode();
-    qs('#generatedCode').value = code;
-    qs('#headSnippet').value = snippetFor(code);
-  });
+    await load();
+    setInterval(() => {
+      if (document.visibilityState === 'visible' && $('modal').getAttribute('aria-hidden') !== 'false') load();
+    }, 30000);
+  }
 
-  qs('#createForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = qs('#tagName').value.trim();
-    if (!name) return;
-    const code = qs('#generatedCode').value || genCode();
-    const list = loadTags();
-    
-    if (list.some(t => t. name. toLowerCase() === name.toLowerCase())) {
-      alert('Une balise avec ce nom existe déjà.');
-      return;
-    }
-    
-    try {
-      await fetch(`/api/balise/${code}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
-    } catch {}
-    
-    list.unshift({ name, code, created: Date.now() });
-    saveTags(list);
-    render();
-    closeModal();
-    
-    const successMsg = document.createElement('div');
-    successMsg.textContent = `✓ Balise "${name}" créée avec succès`;
-    successMsg. style.cssText = `
-      position: fixed;
-      top:  100px;
-      right:  20px;
-      background: #1db954;
-      color: #042014;
-      padding:  14px 20px;
-      border-radius: 12px;
-      font-weight: 600;
-      box-shadow: 0 8px 24px rgba(29, 185, 84, 0.4);
-      z-index: 2000;
-      animation: slideIn 0.3s ease;
-    `;
-    document.body.appendChild(successMsg);
-    setTimeout(() => {
-      successMsg. style.opacity = '0';
-      successMsg.style.transition = 'opacity 0.3s ease';
-      setTimeout(() => successMsg.remove(), 300);
-    }, 3000);
-  });
-
-  qs('#generatedCode').addEventListener('click', async () => {
-    qs('#generatedCode').select();
-    try {
-      await navigator.clipboard.writeText(qs('#generatedCode').value);
-      const originalBg = qs('#generatedCode').style.background;
-      qs('#generatedCode').style.background = 'rgba(29, 185, 84, 0.15)';
-      setTimeout(() => {
-        qs('#generatedCode').style.background = originalBg;
-      }, 300);
-    } catch {}
-  });
-
-  qs('#headSnippet').addEventListener('click', async () => {
-    qs('#headSnippet').select();
-    try {
-      await navigator.clipboard.writeText(qs('#headSnippet').value);
-      const originalBg = qs('#headSnippet').style.background;
-      qs('#headSnippet').style.background = 'rgba(29, 185, 84, 0.15)';
-      setTimeout(() => {
-        qs('#headSnippet').style.background = originalBg;
-      }, 300);
-    } catch {}
-  });
-
-  window.addEventListener('storage', render);
-});
+  init();
+})();

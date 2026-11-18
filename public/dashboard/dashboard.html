@@ -3,19 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Visiter Counter — Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>Visitor Counter — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+  <link rel="stylesheet" href="../common/common.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
     <div class="header-left">
-      <button class="btn-main" onclick="window.location.href='../index/index.html'">← Retour aux balises</button>
+      <a class="btn-main" href="../index/index.html">← Retour aux balises</a>
     </div>
     <div class="header-right">
-      <button class="btn-theme" id="theme-btn">
-        <img id="theme-icon" src="https://cdn-icons-png.flaticon.com/512/6714/6714978.png" alt="theme icon">
-      </button>
+      <a id="instrumentLink" class="btn ghost" href="../instrument/instrument.html">🛠️ Baliser mon site</a>
+      <button class="btn ghost" data-logout hidden>Déconnexion</button>
+      <button class="theme-toggle" data-theme-toggle aria-label="Changer de thème"><span data-theme-icon>🌙</span></button>
     </div>
   </header>
 
@@ -26,69 +29,78 @@
         <div class="info-value" id="tagName">—</div>
       </div>
       <div class="card info-card">
+        <div class="info-title">Code</div>
+        <div class="info-value mono" id="tagCode">—</div>
+      </div>
+      <div class="card info-card">
         <div class="info-title">Date de création</div>
-        <div class="info-value" id="tagParam">—</div>
+        <div class="info-value" id="tagCreated">—</div>
+      </div>
+      <div class="card info-card">
+        <div class="info-title">En ligne maintenant</div>
+        <div class="info-value live-value"><span class="live-dot"></span><span id="liveCount">0</span></div>
       </div>
     </div>
 
-    <div class="controls-row panel card">
-      <div class="controls-left">
-        <div class="controls">
-          <button id="exportCsv" class="btn primary">Exporter CSV</button>
-          <button id="resetStats" class="btn danger">Réinitialiser les données</button>
-        </div>
+    <div id="setupBanner" class="card banner" hidden>
+      <div>
+        <h3>Aucune visite pour l'instant</h3>
+        <p>Ajoute ce script dans le &lt;head&gt; de ton site, ou laisse l'outil le faire pour toi en déposant les fichiers du site.</p>
+        <code id="setupSnippet" class="snippet" title="Cliquer pour copier"></code>
       </div>
-      <div class="controls-right hint"></div>
+      <a id="setupInstrument" class="btn primary" href="../instrument/instrument.html">🛠️ Baliser mon site</a>
     </div>
+
+    <div class="controls-row card">
+      <div class="range" id="rangeSelector" role="group" aria-label="Période">
+        <button type="button" data-range="24h">24 h</button>
+        <button type="button" data-range="7d">7 jours</button>
+        <button type="button" data-range="30d">30 jours</button>
+        <button type="button" data-range="90d">90 jours</button>
+        <button type="button" data-range="365d">12 mois</button>
+        <button type="button" data-range="all">Tout</button>
+      </div>
+      <div id="pageFilter" class="filter-chip" hidden>
+        <span>Page : <strong id="pageFilterLabel"></strong></span>
+        <button type="button" id="clearFilter" aria-label="Retirer le filtre">✕</button>
+      </div>
+      <div class="controls">
+        <a id="exportCsv" class="btn primary" href="#" download>Exporter CSV</a>
+        <button id="resetStats" class="btn danger">Réinitialiser</button>
+      </div>
+    </div>
+
+    <div class="stats kpis" id="kpis"></div>
+
+    <section class="card wide-card">
+      <div class="panel-header">
+        <h3>Fréquentation</h3>
+        <span class="panel-note" id="trafficNote"></span>
+      </div>
+      <div class="chart-box"><canvas id="trafficChart"></canvas></div>
+    </section>
 
     <div class="map-container">
       <div id="map"></div>
     </div>
 
-    <div class="stats">
-      <div class="stat-card-no-grow card" data-chart="pages">
-        <div class="stat-title">Pages vues</div>
-        <div class="stat-value" id="views-count">0</div>
-        <div class="card-hint">Total des chargements</div>
-      </div>
-
-      <div class="stat-card card" data-chart="visitors">
-        <div class="stat-title">
-          Visiteurs Uniques
-          <div class="period-wrapper">
-            <button id="periodButton" class="period-btn" aria-haspopup="true" aria-controls="periodList" aria-expanded="false">Aujourd'hui ▾</button>
-            <ul id="periodList" class="period-list" role="menu" aria-labelledby="periodButton" hidden>
-              <li role="menuitem" tabindex="0" data-period="today" aria-current="true">Aujourd'hui</li>
-              <li role="menuitem" tabindex="0" data-period="month">Ce mois-ci</li>
-              <li role="menuitem" tabindex="0" data-period="year">Cette année</li>
-            </ul>
-          </div>
-        </div>
-        <div class="stat-value" id="unique-visitors">0</div>
-        <div class="card-hint">Cliquez pour voir le graphique</div>
-      </div>
-
-      <div class="stat-card card" data-chart="total">
-        <div class="stat-title">Vues totales</div>
-        <div class="stat-value" id="total-views">0</div>
-        <div class="card-hint">Depuis la création</div>
-      </div>
-    </div>
-
     <section class="panels-grid">
-      <div class="panel card">
+      <div class="panel card span-2">
         <div class="panel-header">
           <h3>Top pages</h3>
+          <span class="panel-note">Clique sur une page pour filtrer tout le dashboard</span>
         </div>
         <div class="table-wrap">
-          <table id="topPagesTable" class="top-pages-table" aria-label="Top pages">
+          <table id="topPagesTable" class="top-pages-table">
             <thead>
               <tr>
                 <th>#</th>
                 <th>Page</th>
                 <th>Vues</th>
-                <th>Uniques</th>
-                <th>Temps</th>
+                <th>Visiteurs</th>
+                <th>Temps moyen</th>
+                <th>Scroll</th>
+                <th>Heatmap</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -97,23 +109,70 @@
       </div>
 
       <div class="panel card">
-        <div class="panel-header">
-          <h3>Répartition</h3>
-        </div>
-        <div class="breakdowns">
-          <div class="breakdown-item">
-            <canvas id="deviceChart" width="200" height="200"></canvas>
-          </div>
-          <div class="breakdown-item">
-            <canvas id="langChart" width="200" height="200"></canvas>
-          </div>
-        </div>
+        <div class="panel-header"><h3>Actions suivies</h3><span class="panel-note">Clics, formulaires, médias…</span></div>
+        <ul class="bar-list" id="eventsList"></ul>
+      </div>
+
+      <div class="panel card">
+        <div class="panel-header"><h3>Sections vues</h3><span class="panel-note">% des vues de la page</span></div>
+        <ul class="bar-list" id="sectionsList"></ul>
+      </div>
+
+      <div class="panel card">
+        <div class="panel-header"><h3>Sources</h3><span class="panel-note">D'où viennent les visiteurs</span></div>
+        <ul class="bar-list" id="sourcesList"></ul>
+      </div>
+
+      <div class="panel card">
+        <div class="panel-header"><h3>Pays</h3></div>
+        <ul class="bar-list" id="countriesList"></ul>
+      </div>
+
+      <div class="panel card">
+        <div class="panel-header"><h3>Appareils</h3></div>
+        <div class="doughnut-box"><canvas id="deviceChart"></canvas></div>
+        <ul class="bar-list compact" id="browsersList"></ul>
+      </div>
+
+      <div class="panel card">
+        <div class="panel-header"><h3>Systèmes et langues</h3></div>
+        <ul class="bar-list compact" id="osList"></ul>
+        <ul class="bar-list compact spaced" id="languagesList"></ul>
+      </div>
+
+      <div class="panel card span-2">
+        <div class="panel-header"><h3>Heures d'affluence</h3><span class="panel-note" id="hoursNote"></span></div>
+        <div class="chart-box small"><canvas id="hoursChart"></canvas></div>
+      </div>
+    </section>
+
+    <section class="card wide-card">
+      <div class="panel-header">
+        <h3>Visites récentes</h3>
+        <span class="panel-note">60 dernières pages vues de la période</span>
+      </div>
+      <div class="table-wrap tall">
+        <table class="top-pages-table recent-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Page</th>
+              <th>Source</th>
+              <th>Lieu</th>
+              <th>Appareil</th>
+              <th>Durée</th>
+              <th>Scroll</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recentBody"></tbody>
+        </table>
       </div>
     </section>
 
     <section class="latency-panel card">
       <div class="latency-header">
-        <h2>Latence API (Ping en ms)</h2>
+        <h2>Latence API (ping en ms)</h2>
         <div class="latency-note">Actualisé toutes les 10 secondes</div>
       </div>
       <canvas id="latencyChart"></canvas>
@@ -123,33 +182,16 @@
       <h3>État des services</h3>
       <div class="status-legend">
         <span class="legend-item"><span class="dot green"></span> Opérationnel</span>
+        <span class="legend-item"><span class="dot orange"></span> En attente</span>
         <span class="legend-item"><span class="dot red"></span> Hors ligne</span>
       </div>
       <div id="servicesList" class="services-list"></div>
     </section>
-
   </main>
-
-  <div id="chartModal" class="chart-modal" hidden>
-    <div class="chart-backdrop" id="chartBackdrop"></div>
-    <div class="chart-container" role="dialog" aria-modal="true" aria-labelledby="chartTitle">
-      <div class="chart-header">
-        <h3 id="chartTitle">Graphique</h3>
-        <div class="chart-controls">
-          <button id="chartPrevPeriod" class="btn" aria-label="Période précédente">‹</button>
-          <button id="chartNextPeriod" class="btn" aria-label="Période suivante">›</button>
-          <button id="chartClose" class="btn" aria-label="Fermer">✕</button>
-        </div>
-      </div>
-      <canvas id="chartCanvas"></canvas>
-      <div class="chart-footer">
-        <span id="chartNote"></span>
-      </div>
-    </div>
-  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
-  <script src="dashboard.js" defer></script>
+  <script src="../common/common.js"></script>
+  <script src="dashboard.js"></script>
 </body>
 </html>

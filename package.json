@@ -1,11 +1,12 @@
 {
   "name": "visiter-counter",
   "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
+  "description": "Self-hosted, privacy-friendly web analytics with automatic site instrumentation",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "check": "node --check server.js && node --check tracker/tag.js && node --check public/instrument/instrumenter.js"
   },
   "author": "GLOXIOU",
   "license": "ISC",
@@ -14,5 +15,8 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "prisma": "^7.2.0"
+  },
+  "engines": {
+    "node": ">=20.12"
   }
 }

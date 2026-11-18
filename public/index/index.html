@@ -3,15 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>Visitor Counter — Gestion des balises</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../common/common.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
     <div class="brand">Visitor Counter</div>
     <nav>
+      <a href="../instrument/instrument.html" class="btn secondary">🛠️ Baliser un site</a>
       <button id="createBtn" class="btn primary">Créer une balise</button>
+      <button class="btn ghost" data-logout hidden>Déconnexion</button>
+      <button class="theme-toggle" data-theme-toggle aria-label="Changer de thème"><span data-theme-icon>🌙</span></button>
     </nav>
   </header>
   <div class="nav-divider"></div>
@@ -19,8 +24,9 @@
   <main class="wrap">
     <section class="panel">
       <h2>Balises créées</h2>
-      <p class="muted">Crée et gère rapidement tes balises. Clique sur "Voir le dashboard" pour ouvrir le dashboard avec le code en paramètre.</p>
-      <div id="empty" class="empty">Aucune balise pour l'instant. Crée ta première balise.</div>
+      <p class="muted">Une balise = un site suivi. Copie le snippet dans le &lt;head&gt; de ton site, ou dépose directement ses fichiers dans « Baliser un site » : le script et les attributs de suivi sont ajoutés automatiquement.</p>
+      <div id="loading" class="empty">Chargement…</div>
+      <div id="empty" class="empty" hidden>Aucune balise pour l'instant. Crée ta première balise.</div>
       <ul id="tagList" class="tag-list" aria-live="polite"></ul>
     </section>
   </main>
@@ -30,26 +36,30 @@
       <button id="closeModal" class="modal-close" aria-label="Fermer">×</button>
       <h3 id="modalTitle">Créer une balise</h3>
       <form id="createForm">
-        <label for="tagName">Nom de la balise</label>
-        <input id="tagName" name="name" type="text" placeholder="Ex: site-principal" required minlength="1" maxlength="40" />
+        <div>
+          <label for="tagName">Nom de la balise</label>
+          <input id="tagName" name="name" type="text" placeholder="Ex : site-principal" required minlength="1" maxlength="40" autocomplete="off" />
+        </div>
         <div class="generated">
           <div>
-            <label>Code généré</label>
+            <label for="generatedCode">Code généré</label>
             <input id="generatedCode" readonly />
           </div>
           <div>
-            <label>Snippet à placer dans le head</label>
+            <label for="headSnippet">Snippet à placer dans le &lt;head&gt;</label>
             <textarea id="headSnippet" rows="3" readonly></textarea>
           </div>
         </div>
+        <p id="formError" class="form-error" hidden></p>
         <div class="modal-actions">
-          <button type="submit" class="btn primary">Créer</button>
           <button type="button" id="cancel" class="btn secondary">Annuler</button>
+          <button type="submit" class="btn primary">Créer</button>
         </div>
       </form>
     </div>
   </div>
 
-  <script src="index.js" defer></script>
+  <script src="../common/common.js"></script>
+  <script src="index.js"></script>
 </body>
 </html>

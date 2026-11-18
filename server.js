@@ -1,128 +1,71 @@
-const express = require('express');
-const baliseRoute = require('./routes/balise');
+try {
+  process.loadEnvFile();
+} catch (e) {}
+
 const path = require('path');
-const fs = require('fs');
+const express = require('express');
+const store = require('./lib/store');
+const geo = require('./lib/geo');
+const auth = require('./lib/auth');
+const collectRoute = require('./routes/collect');
+const baliseRoute = require('./routes/balise');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = Number(process.env.PORT) || 3000;
+const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
+const trustProxy = process.env.TRUST_PROXY;
 
-app.set('trust proxy', true);
+app.set('trust proxy', trustProxy === undefined ? true : /^(true|1|yes)$/i.test(trustProxy) ? true : /^(false|0|no)$/i.test(trustProxy) ? false : trustProxy);
+app.disable('x-powered-by');
 
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
+app.use(collectRoute);
 
-app.get('/tag.js', function(req, res) {
-  var tagId = req.query.tag;
-  
-  if (!tagId) {
-    return res.status(400).send('// Missing tag parameter');
-  }
+app.use(express.json({ limit: '1mb' }));
 
-  var host = req.protocol + '://' + req.get('host');
-
-  var script = `
-(function(){
-  var TAG_ID="${tagId}";
-  var API_URL="${host}/api";
-
-  function getVisitorId() {
-    var k = "visiter_vid_" + TAG_ID;
-    var v = localStorage.getItem(k);
-    if (!v) {
-      v = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      localStorage.setItem(k, v);
-    }
-    return v;
-  }
-
-  function getDeviceType(){
-    var ua=navigator.userAgent;
-    if(/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return "tablet";
-    if(/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return "mobile";
-    return "desktop";
-  }
-
-  function getBrowser(){
-    var ua=navigator.userAgent;
-    if(ua.indexOf("Firefox")>-1) return "firefox";
-    if(ua.indexOf("Chrome")>-1) return "chrome";
-    if(ua.indexOf("Safari")>-1) return "safari";
-    if(ua.indexOf("Edge")>-1) return "edge";
-    return "other";
-  }
-
-  function getReferrerType(){
-    var ref=document.referrer;
-    if(!ref) return "direct";
-    if(ref.indexOf("google")>-1||ref.indexOf("bing")>-1||ref.indexOf("yahoo")>-1) return "search";
-    if(ref.indexOf("facebook")>-1||ref.indexOf("twitter")>-1||ref.indexOf("instagram")>-1) return "social";
-    return "referral";
-  }
-
-  fetch('https://api.ipify.org?format=json')
-    .then(function(response) { return response.json(); })
-    .then(function(ipData) {
-      sendTracking(ipData.ip);
-    })
-    .catch(function() {
-      sendTracking(null);
-    });
-
-  function sendTracking(clientIpv4) {
-    var data={
-      tag: TAG_ID,
-      visitorId: getVisitorId(),
-      page: window.location.pathname + window.location.search,
-      referrer: document.referrer,
-      referrerType: getReferrerType(),
-      device: getDeviceType(),
-      browser: getBrowser(),
-      language: navigator.language,
-      timestamp: Date.now(),
-      clientIpv4: clientIpv4
-    };
-
-    fetch(API_URL+"/balise/"+TAG_ID+"/track", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(data)
-    }).catch(function(e){});
-  }
-
-})();
-`;
-
-  res.setHeader('Content-Type', 'application/javascript');
-  res.send(script);
+app.get('/api/config', function (req, res) {
+  res.set('Cache-Control', 'no-store').json({
+    authRequired: auth.enabled,
+    authenticated: auth.isAuthenticated(req),
+    publicUrl: publicUrl || req.protocol + '://' + req.get('host')
+  });
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.text({ type: 'text/plain' }));
+app.post('/api/auth/login', auth.login);
+app.post('/api/auth/logout', auth.logout);
 
-app.use(function(req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
+app.get('/api/status', auth.requireAuth, function (req, res) {
+  res.set('Cache-Control', 'no-store').json({
+    uptime: Math.round(process.uptime()),
+    storage: store.storageInfo(),
+    geo: geo.status,
+    authRequired: auth.enabled
+  });
 });
 
-app.use(express.static('public'));
-app.use('/api/balise', baliseRoute);
+app.use('/api/balise', auth.requireAuth, baliseRoute);
 
-app.get('/', function(req, res) {
+app.use('/api', function (req, res) {
+  res.status(404).json({ error: 'Route introuvable' });
+});
+
+app.get('/', function (req, res) {
   res.redirect('/index/index.html');
 });
 
-app.use(function(req, res) {
-  res.status(404).json({ error: 'Route not found' });
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+
+app.use(function (req, res) {
+  res.status(404).json({ error: 'Route introuvable' });
 });
 
-app.listen(port, function() {
-  console.log('Server running on http://localhost:' + port);
+app.use(function (err, req, res, next) {
+  const status = err.status || err.statusCode || 500;
+  if (status >= 500) console.error(err);
+  if (res.headersSent) return next(err);
+  res.status(status).json({ error: status === 413 ? 'Requête trop volumineuse' : status < 500 ? 'Requête invalide' : 'Erreur serveur' });
+});
+
+app.listen(port, function () {
+  console.log('Visitor Counter : http://localhost:' + port);
+  if (!auth.enabled) console.log('Aucun ADMIN_PASSWORD défini : le dashboard est accessible sans mot de passe.');
 });

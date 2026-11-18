@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <title>Visitor Counter — Baliser un site</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../common/common.css">
+  <link rel="stylesheet" href="../index/styles.css">
+  <link rel="stylesheet" href="instrument.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../index/index.html">Visitor Counter</a>
+    <nav>
+      <a href="../index/index.html" class="btn secondary">← Balises</a>
+      <a id="dashboardLink" href="../dashboard/dashboard.html" class="btn ghost" hidden>📊 Dashboard</a>
+      <button class="btn ghost" data-logout hidden>Déconnexion</button>
+      <button class="theme-toggle" data-theme-toggle aria-label="Changer de thème"><span data-theme-icon>🌙</span></button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <h2>Baliser un site</h2>
+      <p class="muted">Dépose les fichiers de ton site : le script de suivi est ajouté dans le &lt;head&gt; et des attributs de suivi sont posés sur les liens, boutons, formulaires, sections et vidéos. Tu récupères ensuite les fichiers modifiés, prêts à mettre en ligne.</p>
+
+      <div class="step">
+        <label for="tagSelect">1. Balise à utiliser</label>
+        <div class="step-row">
+          <select id="tagSelect" disabled>
+            <option>Chargement…</option>
+          </select>
+          <a href="../index/index.html" class="btn ghost small">+ Nouvelle balise</a>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-title">2. Ce qu'il faut suivre</span>
+        <div class="options">
+          <label class="option"><input type="checkbox" id="optScript" checked><span><strong>Script de suivi</strong><small>Ajouté dans le &lt;head&gt; de chaque page (visites, durée, scroll, heatmap)</small></span></label>
+          <label class="option"><input type="checkbox" id="optClicks" checked><span><strong>Clics</strong><small>Liens, boutons, menus, e-mails, téléphones, téléchargements</small></span></label>
+          <label class="option"><input type="checkbox" id="optForms" checked><span><strong>Formulaires</strong><small>Envois de formulaires (sans jamais lire ce qui est saisi)</small></span></label>
+          <label class="option"><input type="checkbox" id="optSections" checked><span><strong>Sections vues</strong><small>Jusqu'où les visiteurs descendent dans la page</small></span></label>
+          <label class="option"><input type="checkbox" id="optMedia" checked><span><strong>Vidéos et sons</strong><small>Lectures lancées et terminées</small></span></label>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-title">3. Ton site</span>
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Déposer des fichiers">
+          <div class="drop-icon">📂</div>
+          <div class="drop-title">Dépose ici ton site</div>
+          <div class="drop-sub">Un fichier HTML, plusieurs fichiers (HTML, CSS, JS…), un dossier complet ou une archive .zip</div>
+          <div class="drop-actions">
+            <button type="button" class="btn primary small" id="pickFiles">Choisir des fichiers</button>
+            <button type="button" class="btn secondary small" id="pickFolder">Choisir un dossier</button>
+          </div>
+        </div>
+        <input type="file" id="fileInput" multiple hidden>
+        <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
+        <p class="privacy">🔒 Tout se passe dans ton navigateur : tes fichiers ne sont envoyés nulle part.</p>
+      </div>
+    </section>
+
+    <section id="results" class="panel results" hidden>
+      <div class="results-head">
+        <div>
+          <h2>Résultat</h2>
+          <p class="muted" id="resultsIntro"></p>
+        </div>
+        <div class="results-actions">
+          <button type="button" class="btn secondary" id="resetBtn">Recommencer</button>
+          <button type="button" class="btn secondary" id="copyBtn" hidden>📋 Copier le code</button>
+          <button type="button" class="btn primary" id="downloadBtn">⬇️ Télécharger</button>
+        </div>
+      </div>
+      <div class="summary" id="summary"></div>
+      <ul class="warnings" id="warnings"></ul>
+      <div class="file-list" id="fileList"></div>
+    </section>
+
+    <section class="panel help">
+      <h2>Personnaliser le suivi</h2>
+      <p class="muted">Les attributs ajoutés sont de simples attributs HTML : tu peux renommer leur valeur, en ajouter à la main ou en retirer.</p>
+      <div class="help-grid">
+        <div><code>data-track="Nom"</code><span>Compte les clics sur l'élément sous ce nom.</span></div>
+        <div><code>data-track-view="Nom"</code><span>Compte les visiteurs qui ont vu cette zone à l'écran.</span></div>
+        <div><code>data-track-form="Nom"</code><span>Compte les envois du formulaire.</span></div>
+        <div><code>data-track-media="Nom"</code><span>Compte les lectures d'une vidéo ou d'un son.</span></div>
+        <div><code>data-no-track</code><span>Ignore cet élément.</span></div>
+        <div><code>VisitorCounter.track('Nom')</code><span>Depuis ton JavaScript, pour un événement personnalisé.</span></div>
+      </div>
+      <p class="muted small-note">Les liens et boutons créés en JavaScript sont aussi suivis automatiquement, même sans attribut. Ajoute <code>#vc-notrack</code> à l'adresse de ton site pour ne plus compter tes propres visites sur un appareil (<code>#vc-track</code> pour annuler).</p>
+    </section>
+  </main>
+
+  <script src="../common/common.js"></script>
+  <script src="instrumenter.js"></script>
+  <script src="instrument.js"></script>
+</body>
+</html>

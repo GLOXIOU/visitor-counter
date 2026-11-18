@@ -28,8 +28,17 @@ header.topbar {
   justify-content: space-between;
   align-items: center;
   padding: 20px 40px;
-  background: transparent;
+  background: rgba(17, 17, 17, 0.82);
+  backdrop-filter: blur(10px);
   z-index: 100;
+}
+
+body.light-theme header.topbar {
+  background: rgba(248, 248, 248, 0.85);
+}
+
+a.btn {
+  text-decoration: none;
 }
 
 .brand {
@@ -269,6 +278,74 @@ body.light-theme .tag-code {
   flex-wrap: wrap;
 }
 
+.tag-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: rgba(245, 246, 250, 0.65);
+}
+
+body.light-theme .tag-stats {
+  color: rgba(24, 26, 32, 0.65);
+}
+
+.tag-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1db954;
+  white-space: nowrap;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1db954;
+  box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.6);
+  animation: livePulse 1.8s infinite;
+  display: inline-block;
+}
+
+@keyframes livePulse {
+  0% { box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(29, 185, 84, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(29, 185, 84, 0); }
+}
+
+.tag-hosts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-hosts span {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(29, 185, 84, 0.1);
+  color: #1db954;
+}
+
+.btn.danger-hover:hover {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.form-error {
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+input.copied,
+textarea.copied {
+  background: rgba(29, 185, 84, 0.15) !important;
+}
+
 .modal {
   position: fixed;
   inset: 0;
@@ -446,7 +523,22 @@ textarea {
 
 @media (max-width: 768px) {
   header.topbar {
+    position: sticky;
     padding: 16px 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  nav {
+    flex-wrap: wrap;
+  }
+
+  nav .btn {
+    width: auto;
+  }
+
+  main.wrap {
+    margin-top: 10px;
   }
 
   .brand {
@@ -477,4 +569,25 @@ textarea {
     width: 100%;
     justify-content: center;
   }
+}
+body.light-theme .btn {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .btn.secondary {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body.light-theme .btn.ghost {
+  border-color: rgba(0, 0, 0, 0.18);
+  color: rgba(24, 26, 32, 0.8);
+}
+
+body.light-theme .btn.primary {
+  color: #042014;
+}
+
+body.light-theme .modal-close {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(24, 26, 32, 0.7);
 }
